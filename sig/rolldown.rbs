@@ -1,0 +1,6 @@
+# Generated from lib/rolldown.rb with RBS::Inline
+
+module Rolldown
+  # : () -> String
+  def self.rolldown_version: () -> String
+end

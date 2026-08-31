@@ -1,0 +1,11 @@
+# frozen_string_literal: true
+
+module Rolldown
+  class Error < StandardError; end
+  class OptionError < Error; end
+  class EncodingError < Error; end
+  class BuildError < Error; end
+  class IOError < Error; end
+  class InternalError < Error; end
+  class PanicError < InternalError; end
+end

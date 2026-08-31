@@ -1,0 +1,23 @@
+# Generated from lib/rolldown/backend.rb with RBS::Inline
+
+module Rolldown
+  module Backend
+    module Unavailable
+      # : () -> String
+      def version: () -> String
+
+      # : () -> String
+      def rolldown_version: () -> String
+
+      # : () -> String
+      def probe: () -> String
+
+      private
+
+      # : (Symbol?) -> bot
+      def unavailable: (Symbol?) -> bot
+    end
+
+    extend Unavailable
+  end
+end

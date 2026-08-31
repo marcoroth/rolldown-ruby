@@ -1,0 +1,29 @@
+[workspace]
+
+[package]
+name = "rolldown-ruby-ffi"
+version = "0.0.1"
+edition = "2021"
+authors = ["Marco Roth <marco.roth@intergga.ch>"]
+description = "C FFI bindings for rolldown, used by the rolldown gem"
+license = "MIT"
+repository = "https://github.com/marcoroth/rolldown-ruby"
+publish = false
+
+[lib]
+name = "rolldown_ffi"
+path = "src/lib.rs"
+crate-type = ["cdylib", "staticlib", "rlib"]
+
+[dependencies]
+rolldown = "=1.2.6"
+
+[build-dependencies]
+cbindgen = "0.28"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+panic = "unwind"
