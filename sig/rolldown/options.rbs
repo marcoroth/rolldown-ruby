@@ -1,0 +1,35 @@
+# Generated from lib/rolldown/options.rb with RBS::Inline
+
+module Rolldown
+  class Options
+    KNOWN: Array[Symbol]
+
+    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
+    def self.serialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
+
+    attr_reader options: Hash[Symbol, untyped]
+
+    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
+    def initialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
+
+    # : () -> Hash[Symbol, untyped]
+    def to_h: () -> Hash[Symbol, untyped]
+
+    # : (?untyped) -> String
+    def to_json: (?untyped) -> String
+
+    # : () -> String
+    def inspect: () -> String
+
+    private
+
+    # : (Hash[Symbol, untyped]) -> Hash[Symbol, untyped]
+    def normalize: (Hash[Symbol, untyped]) -> Hash[Symbol, untyped]
+
+    # : (untyped) -> Array[untyped]
+    def entries: (untyped) -> Array[untyped]
+
+    # : (Array[Symbol], String) -> void
+    def validate!: (Array[Symbol], String) -> void
+  end
+end

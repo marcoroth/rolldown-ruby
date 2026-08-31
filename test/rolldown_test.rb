@@ -20,8 +20,4 @@ class RolldownTest < Minitest::Spec
 
     assert_equal locked, Rolldown.rolldown_version
   end
-
-  test "rolldown itself is linked in, not stripped by the optimizer" do
-    assert_equal "ok", Rolldown::Backend.probe
-  end
 end

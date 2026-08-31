@@ -1,6 +1,9 @@
 # Generated from lib/rolldown.rb with RBS::Inline
 
 module Rolldown
+  # : (**untyped) -> Rolldown::BuildResult
+  def self.build: (**untyped) -> Rolldown::BuildResult
+
   # : () -> String
   def self.rolldown_version: () -> String
 end

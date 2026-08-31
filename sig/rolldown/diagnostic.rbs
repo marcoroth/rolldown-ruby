@@ -1,0 +1,35 @@
+# Generated from lib/rolldown/diagnostic.rb with RBS::Inline
+
+module Rolldown
+  class Diagnostic
+    attr_reader kind: String
+
+    attr_reader severity: String
+
+    attr_reader message: String
+
+    attr_reader file: String?
+
+    attr_reader line: Integer?
+
+    attr_reader column: Integer?
+
+    # : (Hash[String, untyped]) -> Rolldown::Diagnostic
+    def self.from_hash: (Hash[String, untyped]) -> Rolldown::Diagnostic
+
+    # : (kind: String, severity: String, message: String, file: String?, line: Integer?, column: Integer?) -> void
+    def initialize: (kind: String, severity: String, message: String, file: String?, line: Integer?, column: Integer?) -> void
+
+    # : () -> bool
+    def error?: () -> bool
+
+    # : () -> bool
+    def warning?: () -> bool
+
+    # : () -> String
+    def to_s: () -> String
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

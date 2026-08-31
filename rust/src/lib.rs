@@ -1,39 +1,39 @@
-use std::ffi::{c_char, CString};
+use std::ffi::{CStr, CString};
+use std::os::raw::c_char;
+use std::panic::{catch_unwind, AssertUnwindSafe};
 
-use rolldown::{Bundler, BundlerOptions};
+mod build;
+mod options;
+mod payload;
+mod result;
 
-/// The version of the `rolldown` gem this library was built for.
+use result::{RolldownErrorCode, RolldownResult};
+
+/// # Safety
+///
+/// `options_json` must be a valid, nul-terminated UTF-8 string.
+#[no_mangle]
+pub unsafe extern "C" fn rolldown_build(options_json: *const c_char) -> RolldownResult {
+  let Some(options) = borrow(options_json) else {
+    return RolldownResult::error(RolldownErrorCode::Encoding, "options were not valid UTF-8");
+  };
+
+  match catch_unwind(AssertUnwindSafe(|| build::build(options))) {
+    Ok(result) => result,
+    Err(payload) => RolldownResult::error(RolldownErrorCode::Panic, panic_message(&payload)),
+  }
+}
+
 #[no_mangle]
 pub extern "C" fn rolldown_version() -> *mut c_char {
   into_c_string(env!("CARGO_PKG_VERSION"))
 }
 
-/// The version of the rolldown crate this library was compiled against.
 #[no_mangle]
 pub extern "C" fn rolldown_rolldown_version() -> *mut c_char {
   into_c_string(env!("ROLLDOWN_VERSION"))
 }
 
-/// Constructs a bundler and throws it away.
-///
-/// M0 ships no bundling. This exists so the linker keeps rolldown, and through it oxc, in the
-/// shared object. Without a real call, link-time optimization strips the dependency entirely and
-/// the coexistence test proves nothing.
-#[no_mangle]
-pub extern "C" fn rolldown_probe() -> *mut c_char {
-  let options = BundlerOptions {
-    cwd: Some(std::env::temp_dir()),
-    ..Default::default()
-  };
-
-  match Bundler::new(options) {
-    Ok(_) => into_c_string("ok"),
-    Err(_) => into_c_string("error"),
-  }
-}
-
-/// Frees a string this library handed out.
-///
 /// # Safety
 ///
 /// `value` must be a pointer this library returned, and must not be used afterwards.
@@ -44,6 +44,45 @@ pub unsafe extern "C" fn rolldown_string_free(value: *mut c_char) {
   }
 
   drop(CString::from_raw(value));
+}
+
+/// # Safety
+///
+/// `result` must be one this library returned, and must not be used afterwards.
+#[no_mangle]
+pub unsafe extern "C" fn rolldown_result_free(result: RolldownResult) {
+  if !result.value.is_null() {
+    drop(CString::from_raw(result.value));
+  }
+
+  if !result.error.is_null() {
+    drop(CString::from_raw(result.error));
+  }
+}
+
+#[cfg(feature = "panic_test")]
+#[no_mangle]
+pub extern "C" fn rolldown_panic_for_test() -> RolldownResult {
+  match catch_unwind(AssertUnwindSafe(|| -> RolldownResult { panic!("a deliberate panic") })) {
+    Ok(result) => result,
+    Err(payload) => RolldownResult::error(RolldownErrorCode::Panic, panic_message(&payload)),
+  }
+}
+
+unsafe fn borrow<'a>(value: *const c_char) -> Option<&'a str> {
+  if value.is_null() {
+    return None;
+  }
+
+  CStr::from_ptr(value).to_str().ok()
+}
+
+fn panic_message(payload: &Box<dyn std::any::Any + Send>) -> String {
+  payload
+    .downcast_ref::<&str>()
+    .map(|message| (*message).to_string())
+    .or_else(|| payload.downcast_ref::<String>().cloned())
+    .unwrap_or_else(|| "rolldown panicked".to_string())
 }
 
 fn into_c_string(value: &str) -> *mut c_char {

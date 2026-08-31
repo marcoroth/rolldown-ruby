@@ -1,0 +1,40 @@
+# Generated from lib/rolldown/build_result.rb with RBS::Inline
+
+module Rolldown
+  class BuildResult
+    attr_reader chunks: Array[Rolldown::Chunk]
+
+    attr_reader assets: Array[Rolldown::Asset]
+
+    attr_reader warnings: Array[Rolldown::Diagnostic]
+
+    attr_reader errors: Array[Rolldown::Diagnostic]
+
+    # : (String) -> Rolldown::BuildResult
+    def self.from_json: (String) -> Rolldown::BuildResult
+
+    # : (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool) -> void
+    def initialize: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool) -> void
+
+    # : () -> bool
+    def failed?: () -> bool
+
+    # : () -> bool
+    def errors?: () -> bool
+
+    # : () -> bool
+    def warnings?: () -> bool
+
+    # : () -> Rolldown::Chunk?
+    def entry: () -> Rolldown::Chunk?
+
+    # : (?strict: bool) -> Rolldown::BuildResult
+    def validate!: (?strict: bool) -> Rolldown::BuildResult
+
+    # : () -> String
+    def to_s: () -> String
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

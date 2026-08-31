@@ -1,0 +1,39 @@
+# Generated from lib/rolldown/chunk.rb with RBS::Inline
+
+module Rolldown
+  class Chunk
+    attr_reader filename: String
+
+    attr_reader name: String
+
+    attr_reader code: String
+
+    attr_reader map: String?
+
+    attr_reader imports: Array[String]
+
+    attr_reader dynamic_imports: Array[String]
+
+    attr_reader exports: Array[String]
+
+    attr_reader module_ids: Array[String]
+
+    # : (Hash[String, untyped]) -> Rolldown::Chunk
+    def self.from_hash: (Hash[String, untyped]) -> Rolldown::Chunk
+
+    # : (filename: String, name: String, code: String, map: String?, entry: bool, dynamic_entry: bool, imports: Array[String], dynamic_imports: Array[String], exports: Array[String], module_ids: Array[String]) -> void
+    def initialize: (filename: String, name: String, code: String, map: String?, entry: bool, dynamic_entry: bool, imports: Array[String], dynamic_imports: Array[String], exports: Array[String], module_ids: Array[String]) -> void
+
+    # : () -> bool
+    def entry?: () -> bool
+
+    # : () -> bool
+    def dynamic_entry?: () -> bool
+
+    # : () -> String
+    def to_s: () -> String
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

@@ -1,0 +1,23 @@
+# Generated from lib/rolldown/asset.rb with RBS::Inline
+
+module Rolldown
+  class Asset
+    attr_reader filename: String
+
+    attr_reader names: Array[String]
+
+    attr_reader source: String?
+
+    # : (Hash[String, untyped]) -> Rolldown::Asset
+    def self.from_hash: (Hash[String, untyped]) -> Rolldown::Asset
+
+    # : (filename: String, names: Array[String], source: String?) -> void
+    def initialize: (filename: String, names: Array[String], source: String?) -> void
+
+    # : () -> String
+    def to_s: () -> String
+
+    # : () -> String
+    def inspect: () -> String
+  end
+end

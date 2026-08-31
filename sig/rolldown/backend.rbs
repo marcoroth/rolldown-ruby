@@ -3,14 +3,14 @@
 module Rolldown
   module Backend
     module Unavailable
+      # : (String) -> String
+      def build: (String) -> String
+
       # : () -> String
       def version: () -> String
 
       # : () -> String
       def rolldown_version: () -> String
-
-      # : () -> String
-      def probe: () -> String
 
       private
 

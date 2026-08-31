@@ -3,6 +3,11 @@
 module Rolldown
   module Backend
     module Unavailable
+      #: (String) -> String
+      def build(_options_json)
+        unavailable(__method__)
+      end
+
       #: () -> String
       def version
         unavailable(__method__)
@@ -10,11 +15,6 @@ module Rolldown
 
       #: () -> String
       def rolldown_version
-        unavailable(__method__)
-      end
-
-      #: () -> String
-      def probe
         unavailable(__method__)
       end
 
