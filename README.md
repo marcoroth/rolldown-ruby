@@ -1,4 +1,4 @@
-<h2 align="center">Rolldown for Ruby</h2>
+<h2 align="center">⬇️ Rolldown for Ruby</h2>
 
 <h4 align="center">Blazing Fast Rust-based bundler for JavaScript.</h4>
 
@@ -29,7 +29,81 @@ Anywhere a precompiled gem is not published, the gem builds from source and need
 
 ### Usage
 
-TODO
+The options follow [Rolldown's JavaScript API](https://rolldown.rs/reference/config-options), so a `rolldown.config.js` ports across as it reads.
+
+```ruby
+result = Rolldown.build(
+  input: "src/main.js",
+  output: {
+    file: "bundle.js"
+  }
+)
+
+result.entry.code
+```
+
+Everything comes back in memory. `write` puts it on disk, chunks and source maps together, creating the directory if it is missing.
+
+```ruby
+result = Rolldown.build(
+  input: "app/javascript/application.js",
+  output: {
+    dir: "app/assets/builds",
+    format: "esm",
+    sourcemap: true,
+    minify: true
+  }
+)
+
+result.write
+#=> ["app/assets/builds/application.js", "app/assets/builds/application.js.map"]
+```
+
+`write` goes to `output.dir`, or to whatever directory `output.file` names, and takes an argument to go somewhere else. `output.dir` also decides what the source map's relative paths look like, so it is worth setting even when writing elsewhere.
+
+Writing happens in Ruby. Rolldown can do it, but it hands the whole bundle back either way, so writing from Rust measured slower while giving the caller less say over where files land.
+
+#### Entry points
+
+An entry point is a string, a list, or a hash of names, matching `string | string[] | Record<string, string>`.
+
+```ruby
+Rolldown.build(input: "src/main.js")
+Rolldown.build(input: ["src/main.js", "src/admin.js"])
+Rolldown.build(input: { app: "src/main.js", admin: "src/admin.js" })
+```
+
+#### What comes back
+
+```ruby
+result.chunks    # every chunk, each with filename, name, code, map, imports, exports and module_ids
+result.assets    # source maps and anything else emitted alongside
+result.entry     # the first chunk that is an entry point
+result.warnings  # diagnostics that did not stop the build
+result.failed?
+```
+
+A build that produces nothing usable raises `Rolldown::BuildError` carrying what went wrong. Pass `strict: true` to raise on warnings too.
+
+#### Bundling, not installing
+
+Bare imports resolve with no plugin and no configuration whenever the files are on disk. Putting them there is a package manager, and this gem is not one. An app whose JavaScript is its own code plus a few vendored libraries needs nothing else.
+
+#### Which options are bound
+
+Of the JavaScript API's 22 input options and 49 output options, these are bound so far.
+
+At the top level, `input`, `cwd`, `external`, `platform`, `treeshake` and `shim_missing_exports`, plus `transform` for `define`.
+
+Under `output`, `dir`, `file`, `format`, `name`, `exports`, `sourcemap`, `minify`, `banner`, `footer`, `intro`, `outro`, `entry_file_names`, `chunk_file_names`, `asset_file_names`, `keep_names`, `legal_comments` and `es_module`.
+
+Names follow the JavaScript spelling in snake_case, so `entryFileNames` is `entry_file_names`. Where JavaScript and Rust disagree, JavaScript wins, and `define` sits under `transform` for the same reason.
+
+#### What cannot cross
+
+Options that take a JavaScript function in the JavaScript API have nowhere to go in Ruby. `plugins`, `on_log`, `manual_chunks` and `sourcemap_path_transform` are refused by name, and anything else Rolldown does not recognise is refused too.
+
+Watch mode, hot module replacement and the dev server are not bound.
 
 ### Development
 

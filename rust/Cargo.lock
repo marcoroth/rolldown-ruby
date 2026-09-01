@@ -1836,6 +1836,7 @@ dependencies = [
  "rolldown",
  "rolldown_common",
  "rolldown_error",
+ "rolldown_utils",
  "serde",
  "serde_json",
  "tokio",

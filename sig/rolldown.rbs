@@ -6,4 +6,7 @@ module Rolldown
 
   # : () -> String
   def self.rolldown_version: () -> String
+
+  # : (Hash[Symbol, untyped]) -> String?
+  private def self.destination: (Hash[Symbol, untyped]) -> String?
 end

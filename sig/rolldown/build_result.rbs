@@ -4,17 +4,19 @@ module Rolldown
   class BuildResult
     attr_reader chunks: Array[Rolldown::Chunk]
 
+    attr_reader dir: Array[Rolldown::Chunk]
+
     attr_reader assets: Array[Rolldown::Asset]
 
     attr_reader warnings: Array[Rolldown::Diagnostic]
 
     attr_reader errors: Array[Rolldown::Diagnostic]
 
-    # : (String) -> Rolldown::BuildResult
-    def self.from_json: (String) -> Rolldown::BuildResult
+    # : (String, ?String?) -> Rolldown::BuildResult
+    def self.from_json: (String, ?String?) -> Rolldown::BuildResult
 
-    # : (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool) -> void
-    def initialize: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool) -> void
+    # : (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
+    def initialize: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
 
     # : () -> bool
     def failed?: () -> bool
@@ -24,6 +26,9 @@ module Rolldown
 
     # : () -> bool
     def warnings?: () -> bool
+
+    # : (?String?) -> Array[String]
+    def write: (?String?) -> Array[String]
 
     # : () -> Rolldown::Chunk?
     def entry: () -> Rolldown::Chunk?

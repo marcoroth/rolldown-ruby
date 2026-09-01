@@ -20,14 +20,29 @@ module Rolldown
     #: (**untyped) -> Rolldown::BuildResult
     def build(**options)
       strict = options.delete(:strict)
-      serialized = Options.serialize(options, Options::KNOWN, "a build")
+      serialized = Options.serialize(options, "a build")
 
-      BuildResult.from_json(Backend.build(serialized)).validate!(strict: strict ? true : false)
+      BuildResult.from_json(Backend.build(serialized), destination(options)).validate!(strict: strict ? true : false)
     end
 
     #: () -> String
     def rolldown_version
       Backend.rolldown_version
+    end
+
+    private
+
+    #: (Hash[Symbol, untyped]) -> String?
+    def destination(options)
+      output = options[:output]
+
+      return nil unless output.is_a?(Hash)
+
+      file = output[:file]
+
+      return File.dirname(file.to_s) if file
+
+      output[:dir]&.to_s
     end
   end
 end

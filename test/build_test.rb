@@ -19,7 +19,7 @@ module Rolldown
         //#endregion
       JS
 
-      assert_equal expected, Rolldown.build(input: ENTRY, format: "esm").entry.code
+      assert_equal expected, Rolldown.build(input: ENTRY, output: { format: "esm" }).entry.code
     end
 
     test "emits an es module" do
@@ -32,7 +32,7 @@ module Rolldown
         export { greet };
       JS
 
-      assert_equal expected, Rolldown.build(input: GREETING, format: "esm").entry.code
+      assert_equal expected, Rolldown.build(input: GREETING, output: { format: "esm" }).entry.code
     end
 
     test "emits commonjs" do
@@ -46,7 +46,7 @@ module Rolldown
         exports.greet = greet;
       JS
 
-      assert_equal expected, Rolldown.build(input: GREETING, format: "cjs").entry.code
+      assert_equal expected, Rolldown.build(input: GREETING, output: { format: "cjs" }).entry.code
     end
 
     test "emits an iife" do
@@ -63,7 +63,7 @@ module Rolldown
         })({});
       JS
 
-      assert_equal expected, Rolldown.build(input: GREETING, format: "iife").entry.code
+      assert_equal expected, Rolldown.build(input: GREETING, output: { format: "iife" }).entry.code
     end
 
     test "answers what it built" do
@@ -101,6 +101,12 @@ module Rolldown
       assert_equal "app.js", result.entry.filename
     end
 
+    test "names entries from a hash, the way the JavaScript config does" do
+      result = Rolldown.build(input: { app: ENTRY, lib: GREETING })
+
+      assert_equal ["app.js", "lib.js"], result.chunks.map(&:filename).sort
+    end
+
     test "takes more than one entry point" do
       result = Rolldown.build(input: [ENTRY, GREETING])
 
@@ -109,19 +115,19 @@ module Rolldown
     end
 
     test "refuses a format it does not know" do
-      error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, format: "amd") }
+      error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, output: { format: "amd" }) }
 
       assert_equal "Unknown format: amd. Expected esm, cjs, iife or umd.", error.message
     end
 
     test "refuses an option a build does not take" do
-      error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, minify: true) }
+      error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, nonsense: true) }
 
-      assert_equal "minify is not an option for a build", error.message
+      assert_equal "nonsense is not an option for a build", error.message
     end
 
     test "requires an entry point" do
-      error = assert_raises(OptionError) { Rolldown.build(format: "esm") }
+      error = assert_raises(OptionError) { Rolldown.build(output: { format: "esm" }) }
 
       assert_equal "input is required", error.message
     end

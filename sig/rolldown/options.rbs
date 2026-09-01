@@ -2,15 +2,23 @@
 
 module Rolldown
   class Options
+    INPUT: Array[Symbol]
+
+    OUTPUT: Array[Symbol]
+
+    TRANSFORM: Array[Symbol]
+
     KNOWN: Array[Symbol]
 
-    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
-    def self.serialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> String
+    CALLABLE: Hash[Symbol, String]
+
+    # : (Hash[Symbol, untyped], ?String) -> String
+    def self.serialize: (Hash[Symbol, untyped], ?String) -> String
 
     attr_reader options: Hash[Symbol, untyped]
 
-    # : (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
-    def initialize: (Hash[Symbol, untyped], ?Array[Symbol], ?String) -> void
+    # : (Hash[Symbol, untyped], ?String) -> void
+    def initialize: (Hash[Symbol, untyped], ?String) -> void
 
     # : () -> Hash[Symbol, untyped]
     def to_h: () -> Hash[Symbol, untyped]
@@ -29,7 +37,25 @@ module Rolldown
     # : (untyped) -> Array[untyped]
     def entries: (untyped) -> Array[untyped]
 
-    # : (Array[Symbol], String) -> void
-    def validate!: (Array[Symbol], String) -> void
+    # : (untyped) -> Array[String]
+    def externals: (untyped) -> Array[String]
+
+    # : (Symbol, Array[Symbol], String) -> void
+    def refuse_nested: (Symbol, Array[Symbol], String) -> void
+
+    # : (Symbol) -> Array[Symbol]
+    def nested_keys: (Symbol) -> Array[Symbol]
+
+    # : () -> Array[Symbol]
+    def output_keys: () -> Array[Symbol]
+
+    # : (Hash[untyped, untyped]) -> Array[untyped]
+    def named: (Hash[untyped, untyped]) -> Array[untyped]
+
+    # : (String) -> void
+    def validate!: (String) -> void
+
+    # : () -> void
+    def refuse_callables: () -> void
   end
 end

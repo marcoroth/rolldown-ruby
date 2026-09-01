@@ -1,29 +1,33 @@
 # frozen_string_literal: true
 
 require "json"
+require "pathname"
+require "fileutils"
 
 module Rolldown
   class BuildResult
-    attr_reader :chunks #: Array[Rolldown::Chunk]
+    attr_reader :chunks, :dir #: Array[Rolldown::Chunk]
     attr_reader :assets #: Array[Rolldown::Asset]
     attr_reader :warnings #: Array[Rolldown::Diagnostic]
     attr_reader :errors #: Array[Rolldown::Diagnostic]
 
-    #: (String) -> Rolldown::BuildResult
-    def self.from_json(payload)
+    #: (String, ?String?) -> Rolldown::BuildResult
+    def self.from_json(payload, dir = nil)
       parsed = JSON.parse(payload)
 
       new(
+        dir: dir,
         chunks: parsed.fetch("chunks").map { |chunk| Chunk.from_hash(chunk) },
         assets: parsed.fetch("assets").map { |asset| Asset.from_hash(asset) },
         warnings: parsed.fetch("warnings").map { |warning| Diagnostic.from_hash(warning) },
         errors: parsed.fetch("errors").map { |error| Diagnostic.from_hash(error) },
         failed: parsed.fetch("failed")
       )
-    end
+    end #: String?
 
-    #: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool) -> void
-    def initialize(chunks:, assets:, warnings:, errors:, failed:)
+    #: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
+    def initialize(chunks:, assets:, warnings:, errors:, failed:, dir: nil)
+      @dir = dir
       @chunks = chunks.freeze
       @assets = assets.freeze
       @warnings = warnings.freeze
@@ -46,6 +50,22 @@ module Rolldown
     #: () -> bool
     def warnings?
       !warnings.empty?
+    end
+
+    #: (?String?) -> Array[String]
+    def write(into = dir)
+      raise IOError, "no directory to write to, pass one or set output.dir or output.file" unless into
+
+      FileUtils.mkdir_p(into)
+
+      (chunks + assets).map do |file|
+        path = Pathname.new(into).join(file.filename).cleanpath.to_s
+
+        FileUtils.mkdir_p(File.dirname(path))
+        File.write(path, file.to_s)
+
+        path
+      end
     end
 
     #: () -> Rolldown::Chunk?
