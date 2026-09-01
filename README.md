@@ -93,7 +93,7 @@ Bare imports resolve with no plugin and no configuration whenever the files are 
 
 Of the JavaScript API's 22 input options and 49 output options, these are bound so far.
 
-At the top level, `input`, `cwd`, `external`, `platform`, `treeshake` and `shim_missing_exports`, plus `transform` for `define`.
+At the top level, `input`, `cwd`, `external`, `platform`, `treeshake`, `shim_missing_exports` and `module_types`, plus `transform` for `define`.
 
 Under `output`, `dir`, `file`, `format`, `name`, `exports`, `sourcemap`, `minify`, `banner`, `footer`, `intro`, `outro`, `entry_file_names`, `chunk_file_names`, `asset_file_names`, `keep_names`, `legal_comments` and `es_module`.
 

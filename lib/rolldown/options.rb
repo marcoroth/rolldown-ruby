@@ -4,7 +4,9 @@ require "json"
 
 module Rolldown
   class Options
-    INPUT = [:input, :cwd, :external, :platform, :treeshake, :shim_missing_exports].freeze #: Array[Symbol]
+    INPUT = [
+      :input, :cwd, :external, :platform, :treeshake, :shim_missing_exports, :module_types
+    ].freeze #: Array[Symbol]
 
     OUTPUT = [
       :dir, :file, :format, :name, :exports, :sourcemap, :minify, :banner, :footer, :intro, :outro,

@@ -7,6 +7,7 @@ use rolldown::{
   LegalComments, OutputExports, OutputFormat, Platform, RawMinifyOptions, SourceMapType, TreeshakeOptions,
 };
 
+use rolldown_common::ModuleType;
 use rolldown_utils::pattern_filter::StringOrRegex;
 use serde::Deserialize;
 
@@ -20,6 +21,7 @@ pub struct Options {
   pub external: Vec<String>,
   pub platform: Option<String>,
   pub treeshake: Option<bool>,
+  pub module_types: BTreeMap<String, String>,
   pub transform: Transform,
   pub shim_missing_exports: Option<bool>,
   pub output: Output,
@@ -105,6 +107,7 @@ impl Options {
         .treeshake
         .map_or(TreeshakeOptions::Boolean(true), TreeshakeOptions::Boolean),
       shim_missing_exports: self.shim_missing_exports,
+      module_types: module_types(self.module_types)?.map(|pairs| pairs.into_iter().collect()),
       dir: output.dir,
       file: output.file,
       format: output.format.as_deref().map(format).transpose()?,
@@ -125,6 +128,28 @@ impl Options {
       ..Default::default()
     })
   }
+}
+
+fn module_types(given: BTreeMap<String, String>) -> Result<Option<Vec<(String, ModuleType)>>, RolldownResult> {
+  if given.is_empty() {
+    return Ok(None);
+  }
+
+  given
+    .into_iter()
+    .map(|(extension, name)| {
+      let module_type = ModuleType::from_known_str(&name).map_err(|_| {
+        unknown(
+          "module type",
+          &name,
+          "js, jsx, ts, tsx, json, text, base64, dataurl, binary, empty, css, asset or copy",
+        )
+      })?;
+
+      Ok((extension, module_type))
+    })
+    .collect::<Result<Vec<_>, _>>()
+    .map(Some)
 }
 
 fn external(patterns: Vec<String>) -> Option<IsExternal> {

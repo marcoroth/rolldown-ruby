@@ -75,6 +75,32 @@ module Rolldown
       assert_equal "entry-bundle.js", result.entry.filename
     end
 
+    test "reads a file the bundler would otherwise refuse" do
+      source = "test/fixtures/module_types/main.js"
+      result = Rolldown.build(input: source, module_types: { ".css" => "text" })
+
+      expected = <<~JS
+        //#endregion
+        //#region test/fixtures/module_types/main.js
+        console.log(".button { color: red }\\n");
+        //#endregion
+      JS
+
+      assert_equal expected, result.entry.code
+    end
+
+    test "refuses a stylesheet with no module type for it" do
+      error = assert_raises(BuildError) { Rolldown.build(input: "test/fixtures/module_types/main.js") }
+
+      assert_equal "[UNSUPPORTED_FEATURE]", error.message[/\A\[[A-Z_]+\]/]
+    end
+
+    test "refuses a module type it does not know" do
+      error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, module_types: { ".x" => "nope" }) }
+
+      assert_equal "Unknown module type: nope. Expected js, jsx, ts, tsx, json, text, base64, dataurl, binary, empty, css, asset or copy.", error.message
+    end
+
     test "refuses a sourcemap kind it does not know" do
       error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, output: { sourcemap: "both" }) }
 
@@ -84,8 +110,7 @@ module Rolldown
     test "says plainly that a JavaScript function cannot cross" do
       error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, plugins: []) }
 
-      assert_equal "plugins takes a JavaScript function, which cannot cross into Ruby. " \
-                   "See https://rolldown.rs for what plugins does.", error.message
+      assert_equal "plugins takes a JavaScript function, which cannot cross into Ruby. See https://rolldown.rs for what plugins does.", error.message
     end
   end
 end
