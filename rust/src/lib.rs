@@ -63,7 +63,15 @@ pub unsafe extern "C" fn rolldown_result_free(result: RolldownResult) {
 
 #[no_mangle]
 pub extern "C" fn rolldown_panic_for_test() -> RolldownResult {
-  match catch_unwind(AssertUnwindSafe(|| -> RolldownResult { panic!("a deliberate panic") })) {
+  let previous = std::panic::take_hook();
+
+  std::panic::set_hook(Box::new(|_| {}));
+
+  let caught = catch_unwind(AssertUnwindSafe(|| -> RolldownResult { panic!("a deliberate panic") }));
+
+  std::panic::set_hook(previous);
+
+  match caught {
     Ok(result) => result,
     Err(payload) => RolldownResult::error(RolldownErrorCode::Panic, panic_message(&payload)),
   }
