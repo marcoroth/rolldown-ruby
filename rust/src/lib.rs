@@ -3,6 +3,7 @@ use std::os::raw::c_char;
 use std::panic::{catch_unwind, AssertUnwindSafe};
 
 mod build;
+mod modules;
 mod options;
 mod payload;
 mod result;

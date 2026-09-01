@@ -73,6 +73,24 @@ Rolldown.build(input: ["src/main.js", "src/admin.js"])
 Rolldown.build(input: { app: "src/main.js", admin: "src/admin.js" })
 ```
 
+#### Bundling something that is not a file
+
+`modules` hands the bundler sources it holds in memory, keyed by whatever name you want to import them under.
+
+```ruby
+Rolldown.build(
+  input: "app:entry",
+  modules: {
+    "app:entry" => %(import { card } from "app:users/card"\ncard()),
+    "app:users/card" => %(export function card() { ... })
+  }
+)
+```
+
+They mix freely with what is on disk. A module in memory can import an npm package or a relative file, and a file on disk can import a module in memory. A relative import out of a module in memory resolves against that module's own name, so give it a path-shaped one when it needs to reach real files next to it.
+
+This exists so a generator can transform sources in Ruby first and bundle the result without writing anything out. There are no plugins, and no Ruby runs while the bundle does.
+
 #### What comes back
 
 ```ruby
@@ -93,7 +111,7 @@ Bare imports resolve with no plugin and no configuration whenever the files are 
 
 Of the JavaScript API's 22 input options and 49 output options, these are bound so far.
 
-At the top level, `input`, `cwd`, `external`, `platform`, `treeshake`, `shim_missing_exports` and `module_types`, plus `transform` for `define`.
+At the top level, `input`, `cwd`, `external`, `platform`, `treeshake`, `shim_missing_exports`, `module_types` and `modules`, plus `transform` for `define`.
 
 Under `output`, `dir`, `file`, `format`, `name`, `exports`, `sourcemap`, `minify`, `banner`, `footer`, `intro`, `outro`, `entry_file_names`, `chunk_file_names`, `asset_file_names`, `keep_names`, `legal_comments` and `es_module`.
 

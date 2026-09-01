@@ -1832,10 +1832,12 @@ dependencies = [
 name = "rolldown-ruby-ffi"
 version = "0.0.1"
 dependencies = [
+ "arcstr",
  "cbindgen",
  "rolldown",
  "rolldown_common",
  "rolldown_error",
+ "rolldown_plugin",
  "rolldown_utils",
  "serde",
  "serde_json",

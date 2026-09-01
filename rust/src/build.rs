@@ -5,12 +5,12 @@ use crate::payload::BuildPayload;
 use crate::result::{RolldownErrorCode, RolldownResult};
 
 pub fn build(options_json: &str) -> RolldownResult {
-  let options = match Options::parse(options_json).and_then(Options::into_bundler_options) {
-    Ok(options) => options,
+  let (options, plugins) = match Options::parse(options_json).and_then(Options::into_parts) {
+    Ok(parts) => parts,
     Err(failure) => return failure,
   };
 
-  let mut bundler = match Bundler::new(options) {
+  let mut bundler = match Bundler::with_plugins(options, plugins) {
     Ok(bundler) => bundler,
     Err(batched) => return payload(BuildPayload::from_failure(batched)),
   };

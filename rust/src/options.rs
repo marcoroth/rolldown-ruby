@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use rolldown::{
   AddonOutputOption, AssetFilenamesOutputOption, BundlerOptions, ChunkFilenamesOutputOption, InputItem, IsExternal,
@@ -8,9 +9,11 @@ use rolldown::{
 };
 
 use rolldown_common::ModuleType;
+use rolldown_plugin::Pluginable;
 use rolldown_utils::pattern_filter::StringOrRegex;
 use serde::Deserialize;
 
+use crate::modules::VirtualModules;
 use crate::result::{RolldownErrorCode, RolldownResult};
 
 #[derive(Deserialize, Default)]
@@ -22,6 +25,7 @@ pub struct Options {
   pub platform: Option<String>,
   pub treeshake: Option<bool>,
   pub module_types: BTreeMap<String, String>,
+  pub modules: BTreeMap<String, String>,
   pub transform: Transform,
   pub shim_missing_exports: Option<bool>,
   pub output: Output,
@@ -81,7 +85,19 @@ impl Options {
     serde_json::from_str(json).map_err(|error| RolldownResult::error(RolldownErrorCode::Option, error.to_string()))
   }
 
-  pub fn into_bundler_options(self) -> Result<BundlerOptions, RolldownResult> {
+  pub fn into_parts(mut self) -> Result<(BundlerOptions, Vec<Arc<dyn Pluginable>>), RolldownResult> {
+    let modules = std::mem::take(&mut self.modules);
+
+    let plugins: Vec<Arc<dyn Pluginable>> = if modules.is_empty() {
+      Vec::new()
+    } else {
+      vec![Arc::new(VirtualModules::new(modules))]
+    };
+
+    Ok((self.into_bundler_options()?, plugins))
+  }
+
+  fn into_bundler_options(self) -> Result<BundlerOptions, RolldownResult> {
     if self.input.is_empty() {
       return Err(RolldownResult::error(RolldownErrorCode::Option, "input is required"));
     }
