@@ -114,6 +114,17 @@ module Rolldown
       assert_equal ["entry.js", "greeting.js"], result.chunks.map(&:filename).sort
     end
 
+    test "builds from several threads at once" do
+      expected = Rolldown.build(input: ENTRY).entry.code
+
+      results = 4.times.map {
+        Thread.new { 3.times.map { Rolldown.build(input: ENTRY).entry.code } }
+      }.flat_map(&:value)
+
+      assert_equal 12, results.length
+      assert_equal [expected], results.uniq
+    end
+
     test "refuses a format it does not know" do
       error = assert_raises(OptionError) { Rolldown.build(input: ENTRY, output: { format: "amd" }) }
 
