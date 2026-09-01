@@ -98,6 +98,7 @@ result.chunks    # every chunk, each with filename, name, code, map, imports, ex
 result.assets    # source maps and anything else emitted alongside
 result.entry     # the first chunk that is an entry point
 result.warnings  # diagnostics that did not stop the build
+result.errors    # diagnostics that did
 result.failed?
 ```
 
