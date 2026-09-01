@@ -22,7 +22,9 @@ module Rolldown
       strict = options.delete(:strict)
       serialized = Options.serialize(options, "a build")
 
-      BuildResult.from_json(Backend.build(serialized), destination(options)).validate!(strict: strict ? true : false)
+      payload = Backend.build(serialized)
+
+      BuildResult.from_json(payload, destination(options), options[:cwd]&.to_s).validate!(strict: strict ? true : false)
     end
 
     #: () -> String

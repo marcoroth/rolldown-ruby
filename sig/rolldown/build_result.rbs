@@ -4,19 +4,21 @@ module Rolldown
   class BuildResult
     attr_reader chunks: Array[Rolldown::Chunk]
 
-    attr_reader dir: Array[Rolldown::Chunk]
-
     attr_reader assets: Array[Rolldown::Asset]
 
     attr_reader warnings: Array[Rolldown::Diagnostic]
 
     attr_reader errors: Array[Rolldown::Diagnostic]
 
-    # : (String, ?String?) -> Rolldown::BuildResult
-    def self.from_json: (String, ?String?) -> Rolldown::BuildResult
+    attr_reader dir: String?
 
-    # : (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
-    def initialize: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
+    attr_reader cwd: String?
+
+    # : (String, ?String?, ?String?) -> Rolldown::BuildResult
+    def self.from_json: (String, ?String?, ?String?) -> Rolldown::BuildResult
+
+    # : (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?, ?cwd: String?) -> void
+    def initialize: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?, ?cwd: String?) -> void
 
     # : () -> bool
     def failed?: () -> bool

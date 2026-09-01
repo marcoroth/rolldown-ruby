@@ -1,11 +1,17 @@
 # frozen_string_literal: true
 
 require "test_helper"
+require "fileutils"
 require "tmpdir"
 
 module Rolldown
   class WriteTest < Minitest::Spec
     ENTRY = "test/fixtures/entry.js" #: String
+
+    #: () -> String
+    def fixtures
+      File.expand_path("fixtures", __dir__)
+    end
 
     test "writes every chunk to the directory the build was given" do
       Dir.mktmpdir do |dir|
@@ -59,6 +65,23 @@ module Rolldown
         assert_equal [File.join(dir, "bundle.js")], result.write
         assert_equal ["bundle.js"], Dir.children(dir)
       end
+    end
+
+    test "writes relative to the cwd the build was given, not the process's" do
+      Dir.mktmpdir do |_dir|
+        result = Rolldown.build(input: "entry.js", cwd: fixtures, output: { dir: "builds" })
+
+        assert_equal [File.join(fixtures, "builds", "entry.js")], result.write
+        assert_equal false, Dir.exist?(File.join(Dir.pwd, "builds"))
+        assert_equal ["entry.js"], Dir.children(File.join(fixtures, "builds"))
+      ensure
+        FileUtils.rm_rf(File.join(fixtures, "builds"))
+      end
+    end
+
+    test "answers the cwd it was built for" do
+      assert_equal fixtures, Rolldown.build(input: "entry.js", cwd: fixtures).cwd
+      assert_nil Rolldown.build(input: ENTRY).cwd
     end
 
     test "answers the directory it was built for" do

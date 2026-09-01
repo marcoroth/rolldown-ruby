@@ -6,17 +6,20 @@ require "fileutils"
 
 module Rolldown
   class BuildResult
-    attr_reader :chunks, :dir #: Array[Rolldown::Chunk]
+    attr_reader :chunks #: Array[Rolldown::Chunk]
     attr_reader :assets #: Array[Rolldown::Asset]
     attr_reader :warnings #: Array[Rolldown::Diagnostic]
     attr_reader :errors #: Array[Rolldown::Diagnostic]
+    attr_reader :dir #: String?
+    attr_reader :cwd #: String?
 
-    #: (String, ?String?) -> Rolldown::BuildResult
-    def self.from_json(payload, dir = nil)
+    #: (String, ?String?, ?String?) -> Rolldown::BuildResult
+    def self.from_json(payload, dir = nil, cwd = nil)
       parsed = JSON.parse(payload)
 
       new(
         dir: dir,
+        cwd: cwd,
         chunks: parsed.fetch("chunks").map { |chunk| Chunk.from_hash(chunk) },
         assets: parsed.fetch("assets").map { |asset| Asset.from_hash(asset) },
         warnings: parsed.fetch("warnings").map { |warning| Diagnostic.from_hash(warning) },
@@ -25,9 +28,10 @@ module Rolldown
       )
     end #: String?
 
-    #: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?) -> void
-    def initialize(chunks:, assets:, warnings:, errors:, failed:, dir: nil)
+    #: (chunks: Array[Rolldown::Chunk], assets: Array[Rolldown::Asset], warnings: Array[Rolldown::Diagnostic], errors: Array[Rolldown::Diagnostic], failed: bool, ?dir: String?, ?cwd: String?) -> void
+    def initialize(chunks:, assets:, warnings:, errors:, failed:, dir: nil, cwd: nil)
       @dir = dir
+      @cwd = cwd
       @chunks = chunks.freeze
       @assets = assets.freeze
       @warnings = warnings.freeze
@@ -56,10 +60,12 @@ module Rolldown
     def write(into = dir)
       raise IOError, "no directory to write to, pass one or set output.dir or output.file" unless into
 
-      FileUtils.mkdir_p(into)
+      root = cwd ? File.expand_path(into, cwd) : into
+
+      FileUtils.mkdir_p(root)
 
       (chunks + assets).map do |file|
-        path = Pathname.new(into).join(file.filename).cleanpath.to_s
+        path = Pathname.new(root).join(file.filename).cleanpath.to_s
 
         FileUtils.mkdir_p(File.dirname(path))
         File.write(path, file.to_s)
