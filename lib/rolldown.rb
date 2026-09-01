@@ -10,9 +10,10 @@ require_relative "rolldown/diagnostic"
 require_relative "rolldown/build_result"
 
 begin
-  require "rolldown/rolldown"
+  major, minor, = RUBY_VERSION.split(".")
+  require_relative "rolldown/#{major}.#{minor}/rolldown"
 rescue LoadError
-  nil
+  require_relative "rolldown/rolldown"
 end
 
 module Rolldown
