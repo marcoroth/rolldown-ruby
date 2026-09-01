@@ -93,6 +93,12 @@ static VALUE rb_build(VALUE self, VALUE options) {
   return call(rolldown_build, options);
 }
 
+static VALUE rb_panic_for_test(VALUE self) {
+  (void) self;
+
+  return unwrap(rolldown_panic_for_test());
+}
+
 static VALUE rb_native_version(VALUE self) {
   (void) self;
 
@@ -118,6 +124,7 @@ void Init_rolldown(void) {
   rb_ePanicError = rb_define_class_under(rb_mRolldown, "PanicError", rb_eInternalError);
 
   rb_define_singleton_method(rb_mBackend, "build", rb_build, 1);
+  rb_define_singleton_method(rb_mBackend, "panic_for_test", rb_panic_for_test, 0);
   rb_define_singleton_method(rb_mBackend, "version", rb_native_version, 0);
   rb_define_singleton_method(rb_mBackend, "rolldown_version", rb_rolldown_version, 0);
 }

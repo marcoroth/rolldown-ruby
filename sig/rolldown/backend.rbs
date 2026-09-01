@@ -7,6 +7,9 @@ module Rolldown
       def build: (String) -> String
 
       # : () -> String
+      def panic_for_test: () -> String
+
+      # : () -> String
       def version: () -> String
 
       # : () -> String

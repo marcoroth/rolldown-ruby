@@ -15,9 +15,6 @@ name = "rolldown_ffi"
 path = "src/lib.rs"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
-[features]
-panic_test = []
-
 [dependencies]
 rolldown = "=1.2.6"
 rolldown_common = "=1.2.6"

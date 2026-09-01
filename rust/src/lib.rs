@@ -61,7 +61,6 @@ pub unsafe extern "C" fn rolldown_result_free(result: RolldownResult) {
   }
 }
 
-#[cfg(feature = "panic_test")]
 #[no_mangle]
 pub extern "C" fn rolldown_panic_for_test() -> RolldownResult {
   match catch_unwind(AssertUnwindSafe(|| -> RolldownResult { panic!("a deliberate panic") })) {

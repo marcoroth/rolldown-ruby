@@ -9,6 +9,11 @@ module Rolldown
       end
 
       #: () -> String
+      def panic_for_test
+        unavailable(__method__)
+      end
+
+      #: () -> String
       def version
         unavailable(__method__)
       end
