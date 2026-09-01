@@ -29,7 +29,7 @@ Anywhere a precompiled gem is not published, the gem builds from source and need
 
 ### Usage
 
-The options follow [Rolldown's JavaScript API](https://rolldown.rs/reference/config-options), so a `rolldown.config.js` ports across as it reads.
+The options follow [Rolldown's JavaScript API](https://rolldown.rs/reference/), so a `rolldown.config.js` ports across as it reads.
 
 ```ruby
 result = Rolldown.build(
