@@ -12,7 +12,7 @@ class RolldownTest < Minitest::Spec
   end
 
   test "reports the version of rolldown it was compiled against" do
-    assert_equal "1.2.6", Rolldown.rolldown_version
+    assert_equal "1.2.7", Rolldown.rolldown_version
   end
 
   test "the version it reports is the one Cargo.lock pins" do
