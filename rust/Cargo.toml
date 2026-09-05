@@ -2,7 +2,7 @@
 
 [package]
 name = "rolldown-ruby-ffi"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Marco Roth <marco.roth@intergga.ch>"]
 description = "C FFI bindings for rolldown, used by the rolldown gem"
