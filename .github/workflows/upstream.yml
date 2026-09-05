@@ -1,0 +1,161 @@
+name: Upstream
+
+concurrency:
+  group: upstream
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # daily at 09:00 UTC
+  workflow_dispatch:
+    inputs:
+      rolldown_version:
+        description: "Rolldown version to bump to (e.g. 1.2.7). Leave blank to auto-detect the latest release on crates.io."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+env:
+  ROLLDOWN_CRATES: "rolldown rolldown_common rolldown_error rolldown_plugin rolldown_utils"
+
+jobs:
+  bump:
+    name: Detect and PR a new Rolldown release
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          persist-credentials: false
+
+      - name: Determine Rolldown version
+        id: upstream
+        env:
+          INPUT_VERSION: ${{ inputs.rolldown_version }}
+        run: |
+          set -euo pipefail
+
+          if [[ -n "${INPUT_VERSION}" ]]; then
+            upstream_version="${INPUT_VERSION#v}"
+          else
+            upstream_version=$(curl -sSf https://crates.io/api/v1/crates/rolldown -H "User-Agent: rolldown-ruby upstream workflow" | jq -r '.crate.max_stable_version')
+          fi
+
+          for crate in ${ROLLDOWN_CRATES}; do
+            if ! curl -sSf "https://crates.io/api/v1/crates/${crate}/${upstream_version}" -H "User-Agent: rolldown-ruby upstream workflow" > /dev/null; then
+              echo "::error::${crate} ${upstream_version} is not published on crates.io"
+              exit 1
+            fi
+          done
+
+          current_version=$(grep -E '^rolldown = "=' rust/Cargo.toml | sed -E 's/.*"=(.*)".*/\1/')
+
+          echo "upstream_version=${upstream_version}" >> "$GITHUB_OUTPUT"
+          echo "current_version=${current_version}" >> "$GITHUB_OUTPUT"
+
+          if [[ "${upstream_version}" == "${current_version}" ]]; then
+            echo "Already up to date (${current_version})"
+            echo "needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "New release: ${current_version} → ${upstream_version}"
+            echo "needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Check for an existing PR
+        if: steps.upstream.outputs.needed == 'true'
+        id: existing_pr
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+        run: |
+          set -euo pipefail
+
+          pr=$(gh pr list --head "bot-dep-rolldown-${UPSTREAM_VERSION}" --json number --jq '.[0].number // empty')
+
+          if [[ -n "${pr}" ]]; then
+            echo "PR #${pr} already exists for ${UPSTREAM_VERSION}"
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Bump the pinned Rolldown version
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+        run: |
+          set -euo pipefail
+
+          for crate in ${ROLLDOWN_CRATES}; do
+            sed -E -i "s|^${crate} = \"=.*\"|${crate} = \"=${UPSTREAM_VERSION}\"|" rust/Cargo.toml
+          done
+
+          sed -E -i "s|assert_equal \".*\", Rolldown\.rolldown_version|assert_equal \"${UPSTREAM_VERSION}\", Rolldown.rolldown_version|" test/rolldown_test.rb
+
+          git diff --stat
+
+      - name: Set up Rust
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          workspaces: rust
+
+      - name: Set up Ruby
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
+      - name: Update rust/Cargo.lock
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+        run: |
+          set -euo pipefail
+
+          cargo fetch --manifest-path rust/Cargo.toml
+
+          locked=$(sed -n -E '/^name = "rolldown"$/{n;s/^version = "(.*)"$/\1/p;}' rust/Cargo.lock)
+
+          if [[ "${locked}" != "${UPSTREAM_VERSION}" ]]; then
+            echo "::error::rust/Cargo.lock pins rolldown ${locked}, expected ${UPSTREAM_VERSION}"
+            exit 1
+          fi
+
+      - name: Build and test against the new version
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        run: bundle exec rake test
+
+      - name: Create pull request
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ROLLDOWN_RUBY_PR_TOKEN || github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          CURRENT_VERSION: ${{ steps.upstream.outputs.current_version }}
+          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+
+        run: |
+          set -euo pipefail
+
+          branch="bot-dep-rolldown-${UPSTREAM_VERSION}"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+
+          git switch -c "${branch}"
+          git add rust/Cargo.toml rust/Cargo.lock test/rolldown_test.rb
+          git commit -m "$(printf "Bump Rolldown to %s\n\nUpdate the embedded Rolldown dependency from %s to %s.\n\nhttps://github.com/rolldown/rolldown/releases/tag/v%s" \
+            "${UPSTREAM_VERSION}" "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${UPSTREAM_VERSION}")"
+
+          git push --force -u origin "${branch}"
+
+          gh pr create \
+            --title "Bump Rolldown to ${UPSTREAM_VERSION}" \
+            --body "$(printf "Update the embedded Rolldown dependency from %s to [%s](https://github.com/rolldown/rolldown/releases/tag/v%s).\n\nThe gem was built and tested against the new version before this PR was opened.\n\nThis PR was created automatically by the upstream workflow." \
+              "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${UPSTREAM_VERSION}")"
