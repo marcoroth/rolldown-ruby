@@ -5,11 +5,15 @@ concurrency:
 
 on:
   schedule:
-    - cron: "0 9 * * *" # daily at 09:00 UTC
+    - cron: "0 */6 * * *" # every six hours
   workflow_dispatch:
     inputs:
       rolldown_version:
-        description: "Rolldown version to bump to (e.g. 1.2.7). Leave blank to auto-detect the latest release on crates.io."
+        description: "Rolldown version to bump to (e.g. 1.2.8). Leave blank to auto-detect the latest release on crates.io."
+        required: false
+        type: string
+      gem_version:
+        description: "Gem version to release. Leave blank to match the Rolldown version. Use a fourth digit (e.g. 1.2.8.1) to re-release the same Rolldown version."
         required: false
         type: string
 
@@ -38,6 +42,7 @@ jobs:
         id: upstream
         env:
           INPUT_VERSION: ${{ inputs.rolldown_version }}
+          INPUT_GEM_VERSION: ${{ inputs.gem_version }}
         run: |
           set -euo pipefail
 
@@ -54,16 +59,26 @@ jobs:
             fi
           done
 
+          gem_version="${INPUT_GEM_VERSION:-${upstream_version}}"
+
+          if [[ ! "${gem_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+            echo "::error::gem version ${gem_version} is not of the form X.Y.Z or X.Y.Z.N"
+            exit 1
+          fi
+
           current_version=$(grep -E '^rolldown = "=' rust/Cargo.toml | sed -E 's/.*"=(.*)".*/\1/')
+          current_gem_version=$(sed -n -E 's/^  VERSION = "(.*)"$/\1/p' lib/rolldown/version.rb)
 
           echo "upstream_version=${upstream_version}" >> "$GITHUB_OUTPUT"
           echo "current_version=${current_version}" >> "$GITHUB_OUTPUT"
+          echo "gem_version=${gem_version}" >> "$GITHUB_OUTPUT"
+          echo "current_gem_version=${current_gem_version}" >> "$GITHUB_OUTPUT"
 
-          if [[ "${upstream_version}" == "${current_version}" ]]; then
-            echo "Already up to date (${current_version})"
+          if [[ "${upstream_version}" == "${current_version}" && "${gem_version}" == "${current_gem_version}" ]]; then
+            echo "Already up to date (Rolldown ${current_version}, gem ${current_gem_version})"
             echo "needed=false" >> "$GITHUB_OUTPUT"
           else
-            echo "New release: ${current_version} → ${upstream_version}"
+            echo "New release: Rolldown ${current_version} -> ${upstream_version}, gem ${current_gem_version} -> ${gem_version}"
             echo "needed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -72,23 +87,24 @@ jobs:
         id: existing_pr
         env:
           GH_TOKEN: ${{ github.token }}
-          UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
         run: |
           set -euo pipefail
 
-          pr=$(gh pr list --head "bot-dep-rolldown-${UPSTREAM_VERSION}" --json number --jq '.[0].number // empty')
+          pr=$(gh pr list --head "bot-dep-rolldown-${GEM_VERSION}" --json number --jq '.[0].number // empty')
 
           if [[ -n "${pr}" ]]; then
-            echo "PR #${pr} already exists for ${UPSTREAM_VERSION}"
+            echo "PR #${pr} already exists for ${GEM_VERSION}"
             echo "exists=true" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: Bump the pinned Rolldown version
+      - name: Bump Rolldown and the gem version
         if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
         env:
           UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
         run: |
           set -euo pipefail
 
@@ -96,6 +112,9 @@ jobs:
             sed -E -i "s|^${crate} = \"=.*\"|${crate} = \"=${UPSTREAM_VERSION}\"|" rust/Cargo.toml
           done
 
+          sed -E -i "s|^  VERSION = \".*\"|  VERSION = \"${GEM_VERSION}\"|" lib/rolldown/version.rb
+
+          sed -E -i "s|assert_equal \".*\", Rolldown::VERSION|assert_equal \"${GEM_VERSION}\", Rolldown::VERSION|" test/rolldown_test.rb
           sed -E -i "s|assert_equal \".*\", Rolldown\.rolldown_version|assert_equal \"${UPSTREAM_VERSION}\", Rolldown.rolldown_version|" test/rolldown_test.rb
 
           git diff --stat
@@ -114,7 +133,7 @@ jobs:
           ruby-version: .ruby-version
           bundler-cache: true
 
-      - name: Update rust/Cargo.lock
+      - name: Update the lockfiles
         if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
         env:
           UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
@@ -122,6 +141,7 @@ jobs:
           set -euo pipefail
 
           cargo fetch --manifest-path rust/Cargo.toml
+          bundle install
 
           locked=$(sed -n -E '/^name = "rolldown"$/{n;s/^version = "(.*)"$/\1/p;}' rust/Cargo.lock)
 
@@ -141,24 +161,25 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           CURRENT_VERSION: ${{ steps.upstream.outputs.current_version }}
           UPSTREAM_VERSION: ${{ steps.upstream.outputs.upstream_version }}
-
+          CURRENT_GEM_VERSION: ${{ steps.upstream.outputs.current_gem_version }}
+          GEM_VERSION: ${{ steps.upstream.outputs.gem_version }}
         run: |
           set -euo pipefail
 
-          branch="bot-dep-rolldown-${UPSTREAM_VERSION}"
+          branch="bot-dep-rolldown-${GEM_VERSION}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
 
           git switch -c "${branch}"
-          git add rust/Cargo.toml rust/Cargo.lock test/rolldown_test.rb
-          git commit -m "$(printf "Bump Rolldown to %s\n\nUpdate the embedded Rolldown dependency from %s to %s.\n\nhttps://github.com/rolldown/rolldown/releases/tag/v%s" \
-            "${UPSTREAM_VERSION}" "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${UPSTREAM_VERSION}")"
+          git add rust/Cargo.toml rust/Cargo.lock lib/rolldown/version.rb test/rolldown_test.rb Gemfile.lock
+          git commit -m "$(printf "Bump Rolldown to %s\n\nUpdate the embedded Rolldown dependency from %s to %s and release it as\ngem v%s.\n\nhttps://github.com/rolldown/rolldown/releases/tag/v%s" \
+            "${UPSTREAM_VERSION}" "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${GEM_VERSION}" "${UPSTREAM_VERSION}")"
 
           git push --force -u origin "${branch}"
 
           gh pr create \
             --title "Bump Rolldown to ${UPSTREAM_VERSION}" \
-            --body "$(printf "Update the embedded Rolldown dependency from %s to [%s](https://github.com/rolldown/rolldown/releases/tag/v%s).\n\nThe gem was built and tested against the new version before this PR was opened.\n\nThis PR was created automatically by the upstream workflow." \
-              "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${UPSTREAM_VERSION}")"
+            --body "$(printf "Update the embedded Rolldown dependency from %s to [%s](https://github.com/rolldown/rolldown/releases/tag/v%s).\n\nThe gem version tracks the Rolldown version it packages, so this also bumps the gem from %s to **%s**.\n\nThe gem was built and tested against the new version before this PR was opened. Merging this does not publish anything, cut a \`v%s\` release to push the gems.\n\nThis PR was created automatically by the upstream workflow." \
+              "${CURRENT_VERSION}" "${UPSTREAM_VERSION}" "${UPSTREAM_VERSION}" "${CURRENT_GEM_VERSION}" "${GEM_VERSION}" "${GEM_VERSION}")"

@@ -27,7 +27,7 @@ pub unsafe extern "C" fn rolldown_build(options_json: *const c_char) -> Rolldown
 
 #[no_mangle]
 pub extern "C" fn rolldown_version() -> *mut c_char {
-  into_c_string(env!("CARGO_PKG_VERSION"))
+  into_c_string(env!("GEM_VERSION"))
 }
 
 #[no_mangle]
