@@ -27,6 +27,14 @@ bundle add rolldown
 
 Anywhere a precompiled gem is not published, the gem builds from source and needs the [Rust toolchain](https://rustup.rs) at 1.96 or newer.
 
+### Versioning
+
+The gem carries the version of Rolldown it packages. Gem v1.2.8 bundles Rolldown v1.2.8, and `Rolldown.rolldown_version` reports what a given build was compiled against.
+
+So the version tracks Rolldown, not the Ruby API here. A minor bump is a minor Rolldown release, and says nothing about whether this gem's own API moved. Pin on the Rolldown version you want.
+
+If the gem needs releasing again for the same Rolldown version, that release adds a fourth digit, as in v1.2.8.1.
+
 ### Usage
 
 The options follow [Rolldown's JavaScript API](https://rolldown.rs/reference/), so a `rolldown.config.js` ports across as it reads.
