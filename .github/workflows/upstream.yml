@@ -24,6 +24,9 @@ jobs:
     name: Detect and PR a new Rolldown release
     runs-on: ubuntu-latest
     timeout-minutes: 90
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - uses: actions/checkout@v6
@@ -102,7 +105,7 @@ jobs:
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          workspaces: rust
+          cache-workspaces: rust
 
       - name: Set up Ruby
         if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
