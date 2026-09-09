@@ -100,6 +100,20 @@ jobs:
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Set up Rust
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          cache-workspaces: rust
+
+      - name: Set up Ruby
+        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: .ruby-version
+          bundler-cache: true
+
       - name: Bump Rolldown and the gem version
         if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
         env:
@@ -119,20 +133,6 @@ jobs:
 
           git diff --stat
 
-      - name: Set up Rust
-        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
-        uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-          cache-workspaces: rust
-
-      - name: Set up Ruby
-        if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
-        uses: ruby/setup-ruby@v1
-        with:
-          ruby-version: .ruby-version
-          bundler-cache: true
-
       - name: Update the lockfiles
         if: steps.upstream.outputs.needed == 'true' && steps.existing_pr.outputs.exists == 'false'
         env:
@@ -141,6 +141,9 @@ jobs:
           set -euo pipefail
 
           cargo fetch --manifest-path rust/Cargo.toml
+
+          bundle config set --local deployment false
+          bundle config set --local frozen false
           bundle install
 
           locked=$(sed -n -E '/^name = "rolldown"$/{n;s/^version = "(.*)"$/\1/p;}' rust/Cargo.lock)
