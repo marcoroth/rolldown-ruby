@@ -4,7 +4,7 @@ require "test_helper"
 
 class RolldownTest < Minitest::Spec
   test "has a version number" do
-    assert_equal "1.2.8", Rolldown::VERSION
+    assert_equal "1.2.9", Rolldown::VERSION
   end
 
   test "the native library was built from the version the gem was" do
@@ -12,7 +12,7 @@ class RolldownTest < Minitest::Spec
   end
 
   test "reports the version of rolldown it was compiled against" do
-    assert_equal "1.2.8", Rolldown.rolldown_version
+    assert_equal "1.2.9", Rolldown.rolldown_version
   end
 
   test "the version it reports is the one Cargo.lock pins" do
