@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
-use std::collections::BTreeMap;
 use rolldown::{
   AddonOutputOption, AssetFilenamesOutputOption, BundlerOptions, ChunkFilenamesOutputOption, InputItem, IsExternal,
   LegalComments, OutputExports, OutputFormat, Platform, RawMinifyOptions, SourceMapType, TreeshakeOptions,
 };
+use std::collections::BTreeMap;
 
 use rolldown_common::ModuleType;
-use rolldown_plugin::{Plugin, __inner::SharedPluginable};
+use rolldown_plugin::{__inner::SharedPluginable, Plugin};
 use rolldown_utils::pattern_filter::StringOrRegex;
 use serde::Deserialize;
 
