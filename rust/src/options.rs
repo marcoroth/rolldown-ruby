@@ -1,15 +1,13 @@
 use std::path::PathBuf;
 
 use std::collections::BTreeMap;
-use std::sync::Arc;
-
 use rolldown::{
   AddonOutputOption, AssetFilenamesOutputOption, BundlerOptions, ChunkFilenamesOutputOption, InputItem, IsExternal,
   LegalComments, OutputExports, OutputFormat, Platform, RawMinifyOptions, SourceMapType, TreeshakeOptions,
 };
 
 use rolldown_common::ModuleType;
-use rolldown_plugin::Pluginable;
+use rolldown_plugin::{Plugin, __inner::SharedPluginable};
 use rolldown_utils::pattern_filter::StringOrRegex;
 use serde::Deserialize;
 
@@ -85,13 +83,13 @@ impl Options {
     serde_json::from_str(json).map_err(|error| RolldownResult::error(RolldownErrorCode::Option, error.to_string()))
   }
 
-  pub fn into_parts(mut self) -> Result<(BundlerOptions, Vec<Arc<dyn Pluginable>>), RolldownResult> {
+  pub fn into_parts(mut self) -> Result<(BundlerOptions, Vec<SharedPluginable>), RolldownResult> {
     let modules = std::mem::take(&mut self.modules);
 
-    let plugins: Vec<Arc<dyn Pluginable>> = if modules.is_empty() {
+    let plugins: Vec<SharedPluginable> = if modules.is_empty() {
       Vec::new()
     } else {
-      vec![Arc::new(VirtualModules::new(modules))]
+      vec![VirtualModules::new_shared(VirtualModules::new(modules))]
     };
 
     Ok((self.into_bundler_options()?, plugins))
