@@ -15,12 +15,12 @@ path = "src/lib.rs"
 crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
-rolldown = "=1.2.12"
-rolldown_common = "=1.2.12"
-rolldown_error = "=1.2.12"
-rolldown_plugin = "=1.2.12"
+rolldown = "=1.2.13"
+rolldown_common = "=1.2.13"
+rolldown_error = "=1.2.13"
+rolldown_plugin = "=1.2.13"
 arcstr = "1"
-rolldown_utils = "=1.2.12"
+rolldown_utils = "=1.2.13"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["rt-multi-thread"] }
