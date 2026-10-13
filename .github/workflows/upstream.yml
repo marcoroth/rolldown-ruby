@@ -59,15 +59,24 @@ jobs:
             fi
           done
 
-          gem_version="${INPUT_GEM_VERSION:-${upstream_version}}"
+          current_version=$(grep -E '^rolldown = "=' rust/Cargo.toml | sed -E 's/.*"=(.*)".*/\1/')
+          current_gem_version=$(sed -n -E 's/^  VERSION = "(.*)"$/\1/p' lib/rolldown/version.rb)
+          current_release=$(echo "${current_gem_version}" | cut -d. -f1-3)
+
+          # A re-release such as 1.2.8.1 still packages Rolldown 1.2.8, so it is kept rather than
+          # replaced by the release it was cut from.
+          if [[ -n "${INPUT_GEM_VERSION}" ]]; then
+            gem_version="${INPUT_GEM_VERSION}"
+          elif [[ "${current_release}" == "${upstream_version}" ]]; then
+            gem_version="${current_gem_version}"
+          else
+            gem_version="${upstream_version}"
+          fi
 
           if [[ ! "${gem_version}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
             echo "::error::gem version ${gem_version} is not of the form X.Y.Z or X.Y.Z.N"
             exit 1
           fi
-
-          current_version=$(grep -E '^rolldown = "=' rust/Cargo.toml | sed -E 's/.*"=(.*)".*/\1/')
-          current_gem_version=$(sed -n -E 's/^  VERSION = "(.*)"$/\1/p' lib/rolldown/version.rb)
 
           echo "upstream_version=${upstream_version}" >> "$GITHUB_OUTPUT"
           echo "current_version=${current_version}" >> "$GITHUB_OUTPUT"
