@@ -11,9 +11,8 @@ module Rolldown
       )
 
       expected = <<~JS
-        //#region herb:entry
+        // herb:entry
         console.log("scoped");
-        //#endregion
       JS
 
       assert_equal expected, result.entry.code
@@ -29,14 +28,12 @@ module Rolldown
       )
 
       expected = <<~JS
-        //#region herb:card
+        // herb:card
         function bump() {
         \tconsole.log("card");
         }
-        //#endregion
-        //#region herb:entry
+        // herb:entry
         bump();
-        //#endregion
       JS
 
       assert_equal expected, result.entry.code
@@ -57,7 +54,7 @@ module Rolldown
       result = Rolldown.build(input: "herb:entry", modules: { "herb:entry" => %(import "nope"\nfoo()) })
 
       assert_equal ["UNRESOLVED_IMPORT"], result.warnings.map(&:kind)
-      assert_equal %(import "nope";\n//#region herb:entry\nfoo();\n//#endregion\n), result.entry.code
+      assert_equal %(import "nope";\n// herb:entry\nfoo();\n), result.entry.code
     end
 
     test "raises on that warning under strict" do
