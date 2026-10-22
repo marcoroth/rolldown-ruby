@@ -49,7 +49,7 @@ module Rolldown
       expected = <<~JS
         (function(exports) {
         	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-        #{ "\t" }// test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         	function greet(name) {
         		return `hello ${name}`;
         	}
@@ -57,6 +57,7 @@ module Rolldown
         	return exports;
         })({});
       JS
+      expected = expected.sub("// test/fixtures/greeting.js", "\t// test/fixtures/greeting.js")
 
       assert_equal expected, Rolldown.build(input: GREETING, output: { format: "iife" }).entry.code
     end
