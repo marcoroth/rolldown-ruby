@@ -9,14 +9,12 @@ module Rolldown
 
     test "bundles an entry point together with what it imports" do
       expected = <<~JS
-        //#region test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         function greet(name) {
         	return `hello ${name}`;
         }
-        //#endregion
-        //#region test/fixtures/entry.js
+        // test/fixtures/entry.js
         console.log(greet("world"));
-        //#endregion
       JS
 
       assert_equal expected, Rolldown.build(input: ENTRY, output: { format: "esm" }).entry.code
@@ -24,11 +22,10 @@ module Rolldown
 
     test "emits an es module" do
       expected = <<~JS
-        //#region test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         function greet(name) {
         	return `hello ${name}`;
         }
-        //#endregion
         export { greet };
       JS
 
@@ -38,11 +35,10 @@ module Rolldown
     test "emits commonjs" do
       expected = <<~JS
         Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-        //#region test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         function greet(name) {
         	return `hello ${name}`;
         }
-        //#endregion
         exports.greet = greet;
       JS
 
@@ -53,15 +49,15 @@ module Rolldown
       expected = <<~JS
         (function(exports) {
         	Object.defineProperty(exports, Symbol.toStringTag, { value: "Module" });
-        	//#region test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         	function greet(name) {
         		return `hello ${name}`;
         	}
-        	//#endregion
         	exports.greet = greet;
         	return exports;
         })({});
       JS
+      expected = expected.sub("// test/fixtures/greeting.js", "\t// test/fixtures/greeting.js")
 
       assert_equal expected, Rolldown.build(input: GREETING, output: { format: "iife" }).entry.code
     end

@@ -44,9 +44,8 @@ module Rolldown
       result = Rolldown.build(input: "test/fixtures/defined.js", transform: { define: { "IS_PRODUCTION" => "true" } })
 
       expected = <<~JS
-        //#region test/fixtures/defined.js
+        // test/fixtures/defined.js
         console.log("production");
-        //#endregion
       JS
 
       assert_equal expected, result.entry.code
@@ -57,11 +56,10 @@ module Rolldown
 
       expected = <<~JS.chomp
         /* top */
-        //#region test/fixtures/greeting.js
+        // test/fixtures/greeting.js
         function greet(name) {
         \treturn `hello ${name}`;
         }
-        //#endregion
         export { greet };
         /* bottom */
       JS
@@ -80,10 +78,8 @@ module Rolldown
       result = Rolldown.build(input: source, module_types: { ".css" => "text" })
 
       expected = <<~JS
-        //#endregion
-        //#region test/fixtures/module_types/main.js
+        // test/fixtures/module_types/main.js
         console.log(".button { color: red }\\n");
-        //#endregion
       JS
 
       assert_equal expected, result.entry.code
