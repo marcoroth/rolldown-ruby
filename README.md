@@ -95,7 +95,7 @@ Rolldown.build(
 )
 ```
 
-They mix freely with what is on disk. A module in memory can import an npm package or a relative file, and a file on disk can import a module in memory. A relative import out of a module in memory resolves against that module's own name, so give it a path-shaped one when it needs to reach real files next to it.
+They mix freely with what is on disk. A module in memory can import an npm package or a relative file, and a file on disk can import a module in memory. A relative import out of a module in memory resolves against that module's own name, so give it a path-shaped one when it needs to reach real files next to it. From there it resolves the way an import from disk does, against `cwd`, so an import with no extension and a directory with an `index` file are both found.
 
 This exists so a generator can transform sources in Ruby first and bundle the result without writing anything out. There are no plugins, and no Ruby runs while the bundle does.
 

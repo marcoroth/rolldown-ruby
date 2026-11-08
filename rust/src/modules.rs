@@ -5,7 +5,7 @@ use std::path::{Component, Path, PathBuf};
 use arcstr::ArcStr;
 use rolldown_plugin::{
   HookLoadArgs, HookLoadOutput, HookLoadReturn, HookResolveIdArgs, HookResolveIdOutput, HookResolveIdReturn, HookUsage,
-  Plugin, PluginContext, SharedLoadPluginContext,
+  Plugin, PluginContext, PluginContextResolveOptions, SharedLoadPluginContext,
 };
 
 #[derive(Debug)]
@@ -30,7 +30,7 @@ impl Plugin for VirtualModules {
     HookUsage::ResolveId | HookUsage::Load
   }
 
-  async fn resolve_id(&self, _ctx: &PluginContext, args: &HookResolveIdArgs<'_>) -> HookResolveIdReturn {
+  async fn resolve_id(&self, ctx: &PluginContext, args: &HookResolveIdArgs<'_>) -> HookResolveIdReturn {
     if self.sources.contains_key(args.specifier) {
       return Ok(Some(HookResolveIdOutput {
         id: ArcStr::from(args.specifier),
@@ -50,12 +50,39 @@ impl Plugin for VirtualModules {
       return Ok(None);
     };
 
-    let Some(resolved) = normalize(&directory.join(args.specifier)) else {
+    let joined = directory.join(args.specifier);
+
+    let Some(resolved) = normalize(&joined) else {
+      return Ok(None);
+    };
+
+    if self.sources.contains_key(&resolved) {
+      return Ok(Some(HookResolveIdOutput::from_id(resolved)));
+    }
+
+    let Some(absolute) = normalize(&ctx.cwd().join(joined)) else {
+      return Ok(None);
+    };
+
+    let options = PluginContextResolveOptions {
+      import_kind: args.kind,
+      skip_self: true,
+      custom: args.custom.clone(),
+      ..Default::default()
+    };
+
+    let Ok(on_disk) = ctx.resolve(&absolute, None, Some(options)).await? else {
       return Ok(None);
     };
 
     Ok(Some(HookResolveIdOutput {
-      id: ArcStr::from(resolved),
+      id: on_disk.id.as_arc_str().clone(),
+      external: Some(on_disk.external),
+      normalize_external_id: on_disk.normalize_external_id,
+      side_effects: on_disk.side_effects,
+      package_json_path: on_disk
+        .package_json
+        .map(|package| package.realpath().to_string_lossy().into_owned()),
       ..Default::default()
     }))
   }
